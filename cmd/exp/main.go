@@ -7,8 +7,7 @@ import (
 
 type User struct {
 	Name string
-	Age  int
-	Meta UserMeta
+	Bio  string
 }
 
 type UserMeta struct {
@@ -21,25 +20,9 @@ func main() {
 		panic(err)
 	}
 
-	// user := User{
-	// 	Name: "John Smith",
-	// }
-
-	// annonomous struct
-	// user := struct {
-	// 	Name string
-	//  Age int
-	// }{
-	// 	Name: "JOhn Smith",
-	//  Age: 111
-	// }
-
 	user := User{
 		Name: "John Smith",
-		Age:  111,
-		Meta: UserMeta{
-			Visits: 4,
-		},
+		Bio:  `<script>alert("Haha, you have been h4x0r3d!");</script>`,
 	}
 
 	err = t.Execute(os.Stdout, user)
