@@ -25,7 +25,7 @@ func main() {
 		Bio:  `<script>alert("Haha, you have been h4x0r3d!");</script>`,
 	}
 
-	err = t.Execute(os.Stdout, user)
+	err = t.Execute(os.Stdout, user) // template already handels encoding!
 
 	if err != nil {
 		panic(err)
