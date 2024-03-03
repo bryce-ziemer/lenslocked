@@ -1,35 +1,33 @@
 package main
 
 import (
-	"html/template"
-	"os"
+	"errors"
+	"fmt"
 )
 
-type User struct {
-	Name string
-	Bio  string
-	Age  int
-}
-
-type UserMeta struct {
-	Visits int
-}
-
 func main() {
-	t, err := template.ParseFiles("hello.gohtml")
+	err := CreateOrg()
+	fmt.Println(err)
+
+}
+
+func Connect() error {
+	return errors.New("Connection Failed")
+}
+
+func CreateUser() error {
+	err := Connect()
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("create user: %w", err)
 	}
+	//... continue on
+	return nil
+}
 
-	user := User{
-		Name: "John Smith",
-		Bio:  `<script>alert("Haha, you have been h4x0r3d!");</script>`,
-		Age:  123,
-	}
-
-	err = t.Execute(os.Stdout, user) // template already handels encoding!
-
+func CreateOrg() error {
+	err := CreateUser()
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("create org: %w", err)
 	}
+	return nil
 }
