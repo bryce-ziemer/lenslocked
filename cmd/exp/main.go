@@ -69,20 +69,35 @@ func main() {
 
 
 	//Insert some data
-	name:= "Test User"
-	email := "test@email.com"
+	// name:= "Test User"
+	// email := "test@email.com"
 
+	// row := db.QueryRow(`
+	//  INSERT INTO users(name, email)
+	//  VALUES ($1, $2) RETURNING id;
+	// `, name, email)
+
+	// var id int
+	// // pass id memory address in and row.scan will set value there
+	// err = row.Scan(&id) // if did not have this scan, would need to check for errors another way (i.e row.Err())
+	// if err != nil{
+	// 	panic(err)
+	// }
+
+	// fmt.Println("User created! id = ", id)
+
+	id := 1
 	row := db.QueryRow(`
-	 INSERT INTO users(name, email)
-	 VALUES ($1, $2) RETURNING id;
-	`, name, email)
+		SELECT name, email
+		FROM users
+		WHERE id=$1;
+		`, id)
 
-	var id int
-	// pass id memory address in and row.scan will set value there
-	err = row.Scan(&id) // if did not have this scan, would need to check for errors another way (i.e row.Err())
+	var name, email string
+	err = row.Scan(&name, &email)
 	if err != nil{
 		panic(err)
 	}
 
-	fmt.Println("User created! id = ", id)
+	fmt.Printf("Usr information: name=%s, email=%s\n", name, email)
 }
