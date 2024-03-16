@@ -69,28 +69,20 @@ func main() {
 
 
 	//Insert some data
-	name:= "',''); DROP TABLE users; --'"
-	email := "Bryce3@email.com"
+	name:= "Test User"
+	email := "test@email.com"
 
-	// BAD - sql-injection - will cause tables to be dropped
-	// 
-	// query := fmt.Sprintf(`
-	// INSERT INTO users (name, email)
-	// VALUES ('%s', '%s');
-	// `, name, email)
-
-	// fmt.Printf("Executing: %s \n", query)
-	// _, err = db.Exec(query)
-
-	// $ makes safer - sql injection does not occur
-	_, err = db.Exec(`
+	row := db.QueryRow(`
 	 INSERT INTO users(name, email)
-	 VALUES ($1, $2);
+	 VALUES ($1, $2) RETURNING id;
 	`, name, email)
 
+	var id int
+	// pass id memory address in and row.scan will set value there
+	err = row.Scan(&id) // if did not have this scan, would need to check for errors another way (i.e row.Err())
 	if err != nil{
 		panic(err)
 	}
 
-	fmt.Println("User created!")
+	fmt.Println("User created! id = ", id)
 }
