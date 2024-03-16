@@ -69,8 +69,20 @@ func main() {
 
 
 	//Insert some data
-	name:= "Bryce Ziemer"
-	email := "Bryce@email.com"
+	name:= "',''); DROP TABLE users; --'"
+	email := "Bryce3@email.com"
+
+	// BAD - sql-injection - will cause tables to be dropped
+	// 
+	// query := fmt.Sprintf(`
+	// INSERT INTO users (name, email)
+	// VALUES ('%s', '%s');
+	// `, name, email)
+
+	// fmt.Printf("Executing: %s \n", query)
+	// _, err = db.Exec(query)
+
+	// $ makes safer - sql injection does not occur
 	_, err = db.Exec(`
 	 INSERT INTO users(name, email)
 	 VALUES ($1, $2);
