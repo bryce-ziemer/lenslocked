@@ -4,28 +4,30 @@ import (
 	"database/sql"
 	"fmt"
 
+	"bryce-ziemer/github.com/lenslocked/models"
+
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 type PostgressConfig struct {
-	Host string
-	Port string
-	User string
+	Host     string
+	Port     string
+	User     string
 	Password string
 	Database string
 	SSLModel string
 }
 
-func (cfg PostgressConfig) toString() string{
+func (cfg PostgressConfig) toString() string {
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Database, cfg.SSLModel)
 
 }
 
 func main() {
 	cfg := PostgressConfig{
-		Host: "localhost",
-		Port: "5432",
-		User: "baloo",
+		Host:     "localhost",
+		Port:     "5432",
+		User:     "baloo",
 		Password: "junglebook",
 		Database: "lenslocked",
 		SSLModel: "disable",
@@ -44,29 +46,40 @@ func main() {
 
 	fmt.Println("connected")
 
-	// Create a table....
-	_, err = db.Exec(`
-	CREATE TABLE IF NOT EXISTS users (
-		id SERIAL PRIMARY KEY,
-		name TEXT,
-		email TEXT UNIQUE NOT NULL
-	);
-
-	CREATE TABLE IF NOT EXISTS orders (
-		id SERIAL PRIMARY KEY,
-		user_id INT NOT NULL,
-		amount INT,
-		description TEXT
-	);
-		
-	`)
-
-	if err != nil {
-		panic(err)
+	// added to show that code in models.user.go is working
+	us := models.UserService{
+		DB: db,
 	}
 
-	fmt.Println("Tables created!")
+	user, err := us.Create("bob3@bob.com", "bob123")
+	if err != nil {
+		panic(err)
 
+	}
+	fmt.Println(user)
+
+	// Create a table....
+	// _, err = db.Exec(`
+	// CREATE TABLE IF NOT EXISTS users (
+	// 	id SERIAL PRIMARY KEY,
+	// 	name TEXT,
+	// 	email TEXT UNIQUE NOT NULL
+	// );
+
+	// CREATE TABLE IF NOT EXISTS orders (
+	// 	id SERIAL PRIMARY KEY,
+	// 	user_id INT NOT NULL,
+	// 	amount INT,
+	// 	description TEXT
+	// );
+
+	// `)
+
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// fmt.Println("Tables created!")
 
 	//Insert some data
 	// name:= "Test User"
@@ -117,44 +130,43 @@ func main() {
 
 	// fmt.Println("Created fake orders.")
 
-	type Order struct {
-		ID int
-		UserId int
-		Amount int
-		Description string
-	}
+	// 	type Order struct {
+	// 		ID          int
+	// 		UserId      int
+	// 		Amount      int
+	// 		Description string
+	// 	}
 
-	var orders []Order
-	userId := 1
-	rows, err := db.Query(`
-		SELECT id, amount, description
-		FROM orders
-		WHERE user_id=$1;
-	`, userId)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
+	// 	var orders []Order
+	// 	userId := 1
+	// 	rows, err := db.Query(`
+	// 		SELECT id, amount, description
+	// 		FROM orders
+	// 		WHERE user_id=$1;
+	// 	`, userId)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	defer rows.Close()
 
-	for rows.Next() {
-		var order Order
-		order.UserId = userId
-		err := rows.Scan(&order.ID, &order.Amount, &order.Description)
-		if err != nil{
-			panic(err)
-		}
+	// 	for rows.Next() {
+	// 		var order Order
+	// 		order.UserId = userId
+	// 		err := rows.Scan(&order.ID, &order.Amount, &order.Description)
+	// 		if err != nil {
+	// 			panic(err)
+	// 		}
 
-		orders = append(orders, order)
+	// 		orders = append(orders, order)
 
-	}
+	// 	}
 
-	// check for an error
-	err = rows.Err()
-	if err!= nil{
-		panic(err)
-	}
+	// 	// check for an error
+	// 	err = rows.Err()
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
 
-	fmt.Println("Orders:", orders)
-
+	// 	fmt.Println("Orders:", orders)
 
 }
