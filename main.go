@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"bryce-ziemer/github.com/lenslocked/controllers"
+	"bryce-ziemer/github.com/lenslocked/models"
 	"bryce-ziemer/github.com/lenslocked/templates"
 	"bryce-ziemer/github.com/lenslocked/views"
 
@@ -23,9 +24,24 @@ func main() {
 	tpl = views.Must(views.ParseFS(templates.FS, "faq.gohtml", "tailwind.gohtml"))
 	r.Get("/faq", controllers.FAQ(tpl))
 
+	cfg := models.DefaultPostgresConfig()
+	db, err := models.Open(cfg)
+
+	if err != nil {
+		panic(err)
+	}
+
+	defer db.Close()
+
+	userService := models.UserService{
+		DB: db,
+	}
+
 	//tpl = views.Must(views.ParseFS(templates.FS, "signup.gohtml", "tailwind.gohtml"))
 	//r.Get("/signup", controllers.FAQ(tpl))
-	usersC := controllers.Users{}
+	usersC := controllers.Users{
+		UserService: &userService,
+	}
 	usersC.Templates.New = views.Must(views.ParseFS(
 		templates.FS,
 		"signup.gohtml",
