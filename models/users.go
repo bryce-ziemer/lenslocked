@@ -48,3 +48,32 @@ func (us *UserService) Create(email, password string) (*User, error) {
 
 	return &user, nil // use '&' so user var is a pointer (specified return pointer in function declarationa nd betetr to return pointers since want to use pointers in other methods (such as an update method))
 }
+
+func (us *UserService) Authenticate(email, password string) (*User, error) {
+	email = strings.ToLower(email)
+	user := User{
+		Email: email,
+	}
+
+	row := us.DB.QueryRow(`
+	SELECT id, password_hash
+	FROM users
+	WHERE email=$1
+	;
+	`, email)
+
+	err := row.Scan(&user.ID, &user.PasswordHash)
+
+	if err != nil {
+		return nil, fmt.Errorf("authenticate: %w", err)
+	}
+
+	bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+	if err != nil {
+		return nil, fmt.Errorf("autenticate: %w", err)
+	}
+	fmt.Println("Password is correct!")
+
+	return &user, err
+
+}
