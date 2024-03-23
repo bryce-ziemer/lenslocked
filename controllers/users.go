@@ -66,6 +66,7 @@ func (u Users) ProcessSignIn(w http.ResponseWriter, r *http.Request) {
 		Name: "email",
 		Value: user.Email,
 		Path: "/",
+		HttpOnly: true, // only allow cookies to be accessed when doing browser requests
 	}
 
 	http.SetCookie(w, &cookie)
