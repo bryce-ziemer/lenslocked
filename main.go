@@ -10,6 +10,7 @@ import (
 	"bryce-ziemer/github.com/lenslocked/views"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/csrf"
 )
 
 func main() {
@@ -64,6 +65,11 @@ func main() {
 		http.Error(w, "Page Not Found", http.StatusNotFound)
 	})
 	fmt.Println("Starting the server on :3000...")
-	http.ListenAndServe(":3000", r)
+	csrfKey := "q8csbqhhteveaq3y1fww0z4201ffqyfa" // Created with https://www.gigacalculator.com/randomizers/random-alphanumeric-generator.php
+	csrfMw := csrf.Protect(
+		[]byte(csrfKey),
+		csrf.Secure(false), // TODO fix before deploying (dont have secure local development)
+		) // returns a function
+	http.ListenAndServe(":3000", csrfMw(r))
 
 }
