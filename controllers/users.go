@@ -3,10 +3,7 @@ package controllers
 import (
 	"bryce-ziemer/github.com/lenslocked/models"
 	"fmt"
-	"html/template"
 	"net/http"
-
-	"github.com/gorilla/csrf"
 )
 
 type Users struct {
@@ -21,10 +18,8 @@ type Users struct {
 func (u Users) New(w http.ResponseWriter, r *http.Request) {
 	var data struct {
 		Email string
-		CSRFField template.HTML
 	}
 	data.Email = r.FormValue("email")
-	data.CSRFField = csrf.TemplateField(r)
 	u.Templates.New.Execute(w, data) // redirects user
 
 }
