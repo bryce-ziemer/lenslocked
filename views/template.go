@@ -1,8 +1,10 @@
 package views
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
+	"io"
 	"io/fs"
 	"log"
 	"net/http"
@@ -23,12 +25,11 @@ func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
 	// Need to define function before calling ParseFS
 	tpl = tpl.Funcs(
 		template.FuncMap{
-			"csrfField": func() template.HTML {
-				return `<!-- TODO: Implement the csrfField -->` // placeholder so hen parse template do not get error
+			"csrfField": func() (template.HTML, error) {
+				return "", fmt.Errorf("csrfField not implemented") // placeholder so hen parse template do not get error
 			},
 		},
 	)
-
 
 	tpl, err := tpl.ParseFS(fs, patterns...)
 	if err != nil {
@@ -53,14 +54,13 @@ type Template struct {
 
 func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface{}) {
 	tpl, err := t.htmlTpl.Clone() // avoid template race condition (race condition occurs because pointer to template maye chnage when multiple users make requests near in time to one another)
-							 // We solve the race condition by cloning the template on a per user/request basis
-
+	// We solve the race condition by cloning the template on a per user/request basis
 
 	if err != nil {
 		log.Printf("Cloning template: %v", err)
 		http.Error(w, "There was an error rendering the page", http.StatusInternalServerError)
 		return
-	}						 
+	}
 	tpl = tpl.Funcs(
 		template.FuncMap{
 			"csrfField": func() template.HTML {
@@ -70,10 +70,13 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 	)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err = tpl.Execute(w, data)
+	var buf bytes.Buffer // in memory now - may lower performance if rendering large templates
+	err = tpl.Execute(&buf, data)
 	if err != nil {
 		log.Printf("executing template: %v", err)
 		http.Error(w, "there was an error executing the template.", http.StatusInternalServerError)
 		return
 	}
+
+	io.Copy(w, &buf)
 }
