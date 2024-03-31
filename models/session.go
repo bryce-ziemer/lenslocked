@@ -26,7 +26,7 @@ func (ss *SessionService) Create(userID int) (*Session, error) {
 
 }
 
-func (sss *SessionService) User(token string) (*User, error) {
+func (ss *SessionService) User(token string) (*User, error) {
 	// TODO Implement SessionService.User
 	return nil, nil
 }
