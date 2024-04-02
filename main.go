@@ -38,10 +38,15 @@ func main() {
 		DB: db,
 	}
 
+	sessionService := models.SessionService{
+		DB: db,
+	}
+
 	//tpl = views.Must(views.ParseFS(templates.FS, "signup.gohtml", "tailwind.gohtml"))
 	//r.Get("/signup", controllers.FAQ(tpl))
 	usersC := controllers.Users{
-		UserService: &userService,
+		UserService:    &userService,
+		SessionService: &sessionService,
 	}
 	usersC.Templates.New = views.Must(views.ParseFS(
 		templates.FS,
@@ -69,7 +74,7 @@ func main() {
 	csrfMw := csrf.Protect(
 		[]byte(csrfKey),
 		csrf.Secure(false), // TODO fix before deploying (dont have secure local development)
-		) // returns a function
+	) // returns a function
 	http.ListenAndServe(":3000", csrfMw(r))
 
 }

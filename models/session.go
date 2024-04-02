@@ -1,7 +1,9 @@
 package models
 
 import (
+	"bryce-ziemer/github.com/lenslocked/rand"
 	"database/sql"
+	"fmt"
 )
 
 type Session struct {
@@ -19,10 +21,22 @@ type SessionService struct {
 }
 
 func (ss *SessionService) Create(userID int) (*Session, error) {
-	//1. Create the session token - we want to handlke this in the service bc, otherwise, a poor token may be p[assed in and used]
-	// TODO: create the session token
-	// TODO: Implement SessionService.Create
-	return nil, nil
+	token, err := rand.SessionToken()
+
+	if err != nil {
+		return nil, fmt.Errorf("Create: %w", err)
+	}
+
+	// TODO: Hash the session token
+	session := Session{
+		UserID: userID,
+		Token:  token,
+		// TODO set the token hash
+
+	}
+	// TODO store the session in our DB
+
+	return &session, nil
 
 }
 
