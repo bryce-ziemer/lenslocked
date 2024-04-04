@@ -2,7 +2,9 @@ package models
 
 import (
 	"bryce-ziemer/github.com/lenslocked/rand"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/base64"
 	"fmt"
 )
 
@@ -29,6 +31,8 @@ type SessionService struct {
 }
 
 func (ss *SessionService) Create(userID int) (*Session, error) {
+	// Could move all this to a tokenManager object and have a new() method to generate new tokens (woudld return (token, tokenHash, err))
+	// essentially moving all the logic to create the token into somethign else (in this case a manager)
 	bytesPerToken := ss.BytesPerToken
 	if bytesPerToken < MinBytesPerToken {
 		bytesPerToken = MinBytesPerToken
@@ -39,12 +43,10 @@ func (ss *SessionService) Create(userID int) (*Session, error) {
 		return nil, fmt.Errorf("Create: %w", err)
 	}
 
-	// TODO: Hash the session token
 	session := Session{
-		UserID: userID,
-		Token:  token,
-		// TODO set the token hash
-
+		UserID:    userID,
+		Token:     token,
+		TokenHash: ss.hash(token),
 	}
 	// TODO store the session in our DB
 
@@ -56,3 +58,13 @@ func (ss *SessionService) User(token string) (*User, error) {
 	// TODO Implement SessionService.User
 	return nil, nil
 }
+
+func (ss *SessionService) hash(token string) string {
+	tokenHash := sha256.Sum256([]byte(token))
+	return base64.URLEncoding.EncodeToString(tokenHash[:])
+}
+
+// Could do this
+//type TokenManager struct{}
+//func (tm TokenManager) New() (token, tokenHash string, err error){
+//}
