@@ -54,7 +54,7 @@ func (ss *SessionService) Create(userID int) (*Session, error) {
 	VALUES ($1, $2)
 	RETURNING id;`, session.UserID, session.TokenHash)
 
-	err = row.Scan(&session.ID)
+	err = row.Scan(&session.ID) // fills out session.UserID
 	if err != nil {
 		return nil, fmt.Errorf("Create: %w", err)
 	}
