@@ -5,5 +5,9 @@ CREATE TABLE sessions (
 );
 
 
+ALTER TABLE sessions
+    ADD CONSTRAINT sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users
+    (id);
+
 DELETE FROM sessions
 WHERE token_hash = $1;
