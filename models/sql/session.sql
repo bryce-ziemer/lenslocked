@@ -11,3 +11,8 @@ ALTER TABLE sessions
 
 DELETE FROM sessions
 WHERE token_hash = $1;
+
+SELECT users.id, users.email, users.password_hash
+FROM sessions
+    JOIN users on users.id = sessions.user_id
+WHERE sessions.token_hash = $1;
