@@ -1,0 +1,1 @@
+CREATE INDEX session_token_hash_ix ON sessions(token_hash, user_id, id);
