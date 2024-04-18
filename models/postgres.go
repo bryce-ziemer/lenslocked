@@ -10,7 +10,7 @@ import (
 // Open will open a SQL connection with the provided Postgres database.
 // Callers of Open need to ensure that the connection is evenually closed via the db.Cklose() method
 func Open(config PostgressConfig) (*sql.DB, error) {
-	db, err := sql.Open("pgx", config.toString())
+	db, err := sql.Open("pgx", config.String())
 	if err != nil {
 		return nil, fmt.Errorf("Open: %w", err)
 	}
@@ -38,7 +38,7 @@ type PostgressConfig struct {
 	SSLModel string
 }
 
-func (cfg PostgressConfig) toString() string {
+func (cfg PostgressConfig) String() string {
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Database, cfg.SSLModel)
 
 }
