@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"bryce-ziemer/github.com/lenslocked/controllers"
+	"bryce-ziemer/github.com/lenslocked/migrations"
 	"bryce-ziemer/github.com/lenslocked/models"
 	"bryce-ziemer/github.com/lenslocked/templates"
 	"bryce-ziemer/github.com/lenslocked/views"
@@ -34,7 +35,7 @@ func main() {
 
 	defer db.Close()
 
-	err = models.Migrate(db, "migrations")
+	err = models.MigrateFS(db, migrations.FS, ".")
 	if err != nil {
 		panic(err)
 	}
