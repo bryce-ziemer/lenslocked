@@ -1,9 +1,11 @@
 package main
 
 import (
-	"context"
+	stdctx "context"
 	"fmt"
-	"strings"
+
+	"bryce-ziemer/github.com/lenslocked/context"
+	"bryce-ziemer/github.com/lenslocked/models"
 )
 
 // Best practice so no one else can accidently collide (more unique, because linked to type)
@@ -16,27 +18,14 @@ const (
 )
 
 func main() {
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, favoriteColorKey, "blue")
-	value := ctx.Value(favoriteColorKey) // value is of type any
-	// fmt.Println(strings.HasPrefix(value, "b")) // WOULD COMPLAIN - value is of type any, not string
+	ctx := stdctx.Background()
 
-	intValue, ok := value.(int)
-
-	if !ok {
-		fmt.Println("Not an int !")
-	} else {
-		fmt.Println(intValue)
-		fmt.Println(intValue + 4)
+	user := models.User{
+		Email: "me@email.com",
 	}
 
-	strValue, ok := value.(string)
-	// fmt.Println(strings.HasPrefix(value, "b")) // WOULD COMPLAIN - value is of type any, not string
+	ctx = context.WithUser(ctx, &user)
 
-	if !ok {
-		fmt.Println("Not an int !")
-	} else {
-		fmt.Println(strValue)
-		fmt.Println(strings.HasPrefix(strValue, "b"))
-	}
+	retrivedUser := context.User(ctx)
+	fmt.Println(retrivedUser.Email)
 }
