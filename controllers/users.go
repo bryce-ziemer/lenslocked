@@ -87,15 +87,12 @@ func (u Users) ProcessSignIn(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/users/me", http.StatusFound)
 }
 
+// assume user is present when get here
+// Middleware shoudl handle making sure a user is present
 func (u Users) CurrentUser(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	user := context.User(ctx)
-	if user == nil {
-		http.Redirect(w, r, "/signin", http.StatusFound)
-		return
-	}
-
 	fmt.Fprintf(w, "Current user: %s\n", user.Email)
 
 }
@@ -144,5 +141,18 @@ func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
 
+	})
+}
+
+// Assumes UserMiddleware.Setuser has already been run
+func (umw UserMiddleware) RequireUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := context.User(r.Context())
+		if user == nil {
+			http.Redirect(w, r, "/signin", http.StatusFound)
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	})
 }

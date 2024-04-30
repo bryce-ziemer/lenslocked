@@ -15,17 +15,8 @@ import (
 )
 
 func main() {
-	r := chi.NewRouter()
 
-	tpl := views.Must(views.ParseFS(templates.FS, "home.gohtml", "tailwind.gohtml"))
-	r.Get("/", controllers.StaticHandler(tpl))
-
-	tpl = views.Must(views.ParseFS(templates.FS, "contact.gohtml", "tailwind.gohtml"))
-	r.Get("/contact", controllers.StaticHandler(tpl))
-
-	tpl = views.Must(views.ParseFS(templates.FS, "faq.gohtml", "tailwind.gohtml"))
-	r.Get("/faq", controllers.FAQ(tpl))
-
+	// Setup the database
 	cfg := models.DefaultPostgresConfig()
 	db, err := models.Open(cfg)
 
@@ -40,6 +31,7 @@ func main() {
 		panic(err)
 	}
 
+	// Setup services
 	userService := models.UserService{
 		DB: db,
 	}
@@ -48,8 +40,18 @@ func main() {
 		DB: db,
 	}
 
-	//tpl = views.Must(views.ParseFS(templates.FS, "signup.gohtml", "tailwind.gohtml"))
-	//r.Get("/signup", controllers.FAQ(tpl))
+	// Setup middleware
+	umw := controllers.UserMiddleware{
+		SessionService: &sessionService,
+	}
+
+	csrfKey := "q8csbqhhteveaq3y1fww0z4201ffqyfa" // Created with https://www.gigacalculator.com/randomizers/random-alphanumeric-generator.php
+	csrfMw := csrf.Protect(
+		[]byte(csrfKey),
+		csrf.Secure(false), // TODO fix before deploying (dont have secure local development)
+	) // returns a function
+
+	// setup controllers
 	usersC := controllers.Users{
 		UserService:    &userService,
 		SessionService: &sessionService,
@@ -66,29 +68,39 @@ func main() {
 		"tailwind.gohtml",
 	))
 
+	// Setup router and routes
+
+	r := chi.NewRouter()
+	r.Use(csrfMw)
+	r.Use(umw.SetUser)
+
+	tpl := views.Must(views.ParseFS(templates.FS, "home.gohtml", "tailwind.gohtml"))
+	r.Get("/", controllers.StaticHandler(tpl))
+
+	tpl = views.Must(views.ParseFS(templates.FS, "contact.gohtml", "tailwind.gohtml"))
+	r.Get("/contact", controllers.StaticHandler(tpl))
+
+	tpl = views.Must(views.ParseFS(templates.FS, "faq.gohtml", "tailwind.gohtml"))
+	r.Get("/faq", controllers.FAQ(tpl))
+
 	r.Get("/signup", usersC.New)
 	r.Post("/users", usersC.Create)
 	r.Get("/signin", usersC.SignIn)
 	r.Post("/signin", usersC.ProcessSignIn)
 	r.Post("/signout", usersC.ProcessSignOut)
-	r.Get("/users/me", usersC.CurrentUser)
+	//r.Get("/users/me", usersC.CurrentUser)
+	r.Route("/users/me", func(r chi.Router) {
+		r.Use(umw.RequireUser)
+		r.Get("/", usersC.CurrentUser)
+
+	})
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page Not Found", http.StatusNotFound)
 	})
 
-	umw := controllers.UserMiddleware{
-		SessionService: &sessionService,
-	}
-
-	csrfKey := "q8csbqhhteveaq3y1fww0z4201ffqyfa" // Created with https://www.gigacalculator.com/randomizers/random-alphanumeric-generator.php
-	csrfMw := csrf.Protect(
-		[]byte(csrfKey),
-		csrf.Secure(false), // TODO fix before deploying (dont have secure local development)
-	) // returns a function
-
+	// Start the server
 	fmt.Println("Starting the server on :3000...")
-
-	http.ListenAndServe(":3000", csrfMw(umw.SetUser(r)))
+	http.ListenAndServe(":3000", r)
 
 }
