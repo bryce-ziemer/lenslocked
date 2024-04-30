@@ -76,12 +76,19 @@ func main() {
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page Not Found", http.StatusNotFound)
 	})
-	fmt.Println("Starting the server on :3000...")
+
+	umw := controllers.UserMiddleware{
+		SessionService: &sessionService,
+	}
+
 	csrfKey := "q8csbqhhteveaq3y1fww0z4201ffqyfa" // Created with https://www.gigacalculator.com/randomizers/random-alphanumeric-generator.php
 	csrfMw := csrf.Protect(
 		[]byte(csrfKey),
 		csrf.Secure(false), // TODO fix before deploying (dont have secure local development)
 	) // returns a function
-	http.ListenAndServe(":3000", csrfMw(r))
+
+	fmt.Println("Starting the server on :3000...")
+
+	http.ListenAndServe(":3000", csrfMw(umw.SetUser(r)))
 
 }
