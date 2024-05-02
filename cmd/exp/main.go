@@ -2,19 +2,30 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"strconv"
 
 	"bryce-ziemer/github.com/lenslocked/models"
-)
 
-// varies depending on mail service
-const (
-	host     = "sandbox.smtp.mailtrap.io"
-	port     = 2525
-	username = "d2d80aa2bea15a"
-	password = "6d22ab77885635"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading.env file")
+	}
+
+	host := os.Getenv("SMTP_HOST")
+	portStr := os.Getenv("SMTP_PORT")
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		panic(err)
+	}
+	username := os.Getenv("SMTP_USERNAME")
+	password := os.Getenv("SMTP_PASSWORD")
 
 	email := models.Email{
 		From:      "test@lenslocked.com",
@@ -31,7 +42,7 @@ func main() {
 		Password: password,
 	})
 
-	err := es.Send(email)
+	err = es.Send(email)
 	if err != nil {
 		panic(err)
 	}
