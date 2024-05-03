@@ -5,16 +5,21 @@ import (
 	"bryce-ziemer/github.com/lenslocked/models"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 type Users struct {
 	Templates struct {
-		New    Template
-		SignIn Template
+		New            Template
+		SignIn         Template
+		ForgotPassword Template
+		CheckYourEmail Template
 	}
 
-	UserService    *models.UserService
-	SessionService *models.SessionService
+	UserService          *models.UserService
+	SessionService       *models.SessionService
+	PasswordResetService *models.PasswordResetService
+	EmailService         *models.EmailService
 }
 
 func (u Users) New(w http.ResponseWriter, r *http.Request) {
@@ -115,6 +120,43 @@ func (u Users) ProcessSignOut(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/signin", http.StatusFound)
 
+}
+
+func (u Users) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		Email string
+	}
+	data.Email = r.FormValue("email")
+	u.Templates.ForgotPassword.Execute(w, r, data)
+}
+
+func (u Users) ProcessForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		Email string
+	}
+	data.Email = r.FormValue("email")
+	pwReset, err := u.PasswordResetService.Create(data.Email)
+	if err != nil {
+		// TODO handle other cases int he future, for instance if a user does not exist with that emaila ddress
+		fmt.Println(err)
+		http.Error(w, "Something went wrong.", http.StatusInternalServerError)
+		return
+	}
+
+	vals := url.Values{
+		"token": {pwReset.Token},
+	}
+	resetURL := "https://www.lnslocked.com/reset-pw?" + vals.Encode()
+	err = u.EmailService.ForgotPassword(data.Email, resetURL)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong.", http.StatusInternalServerError)
+		return
+	}
+
+	// Don't render the reset token here, we need the user to confirm they have access to the
+	// email account to verify their identity
+	u.Templates.CheckYourEmail.Execute(w, r, data)
 }
 
 type UserMiddleware struct {

@@ -33,6 +33,7 @@ func NewEmailService(config SMTPConfig) *EmailService {
 	return &es
 }
 
+// Good use of service because heavily relies on 3rd party library??
 type EmailService struct {
 	// DefaultSender is used as the default sender when one isn't provided for an
 	// email. This is also used in functions where the email is predetermined,
