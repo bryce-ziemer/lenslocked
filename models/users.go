@@ -81,7 +81,7 @@ func (us *UserService) Authenticate(email, password string) (*User, error) {
 func (us *UserService) UpdatePassword(userId int, password string) error {
 	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return fmt.Errorf("Update Password: %w", err)
+		return fmt.Errorf("UpdatePassword: %w", err)
 	}
 	passwordHash := string(hashedBytes)
 
@@ -91,7 +91,7 @@ func (us *UserService) UpdatePassword(userId int, password string) error {
 	WHERE id = $1;`, userId, passwordHash)
 
 	if err != nil {
-		return fmt.Errorf("update password : %w", err)
+		return fmt.Errorf("UpdatePassword : %w", err)
 	}
 
 	return nil
