@@ -184,4 +184,6 @@ func main() {
 		panic(err)
 	}
 
+	//pgerrcode.UndefinedColumn
+
 }
