@@ -2,6 +2,7 @@ package views
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -14,6 +15,10 @@ import (
 
 	"github.com/gorilla/csrf"
 )
+
+type public interface {
+	Public() string
+}
 
 func Must(t Template, err error) Template {
 	if err != nil {
@@ -36,11 +41,7 @@ func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
 				return "", fmt.Errorf("currentUser not implemented") // placeholder so hen parse template do not get error
 			},
 			"errors": func() []string {
-				return []string{
-					"Don't do that!",
-					"the email you provided is already associated with an account.",
-					"Something went wrong.",
-				}
+				return nil
 			},
 		},
 	)
@@ -54,19 +55,11 @@ func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
 
 }
 
-// func Parse(filepath string) (Template, error) {
-// 	tpl, err := template.ParseFiles(filepath)
-// 	if err != nil {
-// 		return Template{}, fmt.Errorf("parsing template: %w", err)
-// 	}
-// 	return Template{htmlTpl: tpl}, nil
-// }
-
 type Template struct {
 	htmlTpl *template.Template
 }
 
-func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface{}) {
+func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface{}, errs ...error) {
 	tpl, err := t.htmlTpl.Clone() // avoid template race condition (race condition occurs because pointer to template maye chnage when multiple users make requests near in time to one another)
 	// We solve the race condition by cloning the template on a per user/request basis
 
@@ -75,6 +68,7 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 		http.Error(w, "There was an error rendering the page", http.StatusInternalServerError)
 		return
 	}
+	errMsgs := errMessages(errs...)
 	tpl = tpl.Funcs(
 		template.FuncMap{
 			"csrfField": func() template.HTML {
@@ -83,6 +77,11 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 
 			"currentUser": func() *models.User {
 				return context.User(r.Context())
+			},
+
+			"errors": func() []string {
+				return errMsgs
+
 			},
 		},
 	)
@@ -97,4 +96,20 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data interface
 	}
 
 	io.Copy(w, &buf)
+}
+
+func errMessages(errs ...error) []string {
+	var msgs []string
+	for _, err := range errs {
+		var pubErr public
+		if errors.As(err, &pubErr) {
+			msgs = append(msgs, pubErr.Public())
+		} else {
+			fmt.Println(err)
+			msgs = append(msgs, err.Error())
+		}
+	}
+
+	return msgs
+
 }
