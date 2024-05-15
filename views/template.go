@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"path"
 
 	"bryce-ziemer/github.com/lenslocked/context"
 	"bryce-ziemer/github.com/lenslocked/models"
@@ -28,7 +29,7 @@ func Must(t Template, err error) Template {
 }
 
 func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
-	tpl := template.New(patterns[0])
+	tpl := template.New(path.Base(patterns[0])) // use path.base to pass tpl.ParseFS file naming...?
 
 	// Need to define function before calling ParseFS
 	tpl = tpl.Funcs(

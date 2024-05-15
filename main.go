@@ -93,6 +93,10 @@ func main() {
 		DB: db,
 	}
 
+	galleryService := &models.GalleryService{
+		DB: db,
+	}
+
 	emailService := models.NewEmailService(cfg.SMTP)
 
 	// Setup middleware
@@ -142,6 +146,16 @@ func main() {
 		"tailwind.gohtml",
 	))
 
+	galleriesC := controllers.Galleries{
+		GalleryService: galleryService,
+	}
+
+	galleriesC.Templates.New = views.Must(views.ParseFS(
+		templates.FS,
+		"galleries/new.gohtml",
+		"tailwind.gohtml",
+	))
+
 	// Setup router and routes
 
 	r := chi.NewRouter()
@@ -172,6 +186,8 @@ func main() {
 		r.Get("/", usersC.CurrentUser)
 
 	})
+
+	r.Get("/galleries/new", galleriesC.New)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page Not Found", http.StatusNotFound)
