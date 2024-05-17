@@ -44,7 +44,7 @@ func (service *GalleryService) ByID(id int) (*Gallery, error) {
 	FROM galleries
 	WHERE id = $1;`, gallery.ID)
 
-	err := row.Scan(gallery.Title, gallery.UserID)
+	err := row.Scan(&gallery.Title, &gallery.UserID)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -93,7 +93,7 @@ func (service *GalleryService) Update(gallery *Gallery) error {
 	_, err := service.DB.Exec(`
 	UPDATE galleries
 	set title = $2
-	WHERE id = %1;`, gallery.ID, gallery.Title)
+	WHERE id = $1;`, gallery.ID, gallery.Title)
 
 	if err != nil {
 		return fmt.Errorf("update gallery: %w", err)

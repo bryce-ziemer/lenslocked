@@ -107,6 +107,7 @@ func main() {
 	csrfMw := csrf.Protect(
 		[]byte(cfg.CSRF.Key),
 		csrf.Secure(cfg.CSRF.Secure),
+		csrf.Path("/"),
 	) // returns a function
 
 	// setup controllers
@@ -156,6 +157,18 @@ func main() {
 		"tailwind.gohtml",
 	))
 
+	galleriesC.Templates.Edit = views.Must(views.ParseFS(
+		templates.FS,
+		"galleries/edit.gohtml",
+		"tailwind.gohtml",
+	))
+
+	galleriesC.Templates.Index = views.Must(views.ParseFS(
+		templates.FS,
+		"galleries/index.gohtml",
+		"tailwind.gohtml",
+	))
+
 	// Setup router and routes
 
 	r := chi.NewRouter()
@@ -187,7 +200,17 @@ func main() {
 
 	})
 
-	r.Get("/galleries/new", galleriesC.New)
+	r.Route("/galleries", func(r chi.Router) {
+		r.Group(func(r chi.Router) {
+			r.Use(umw.RequireUser)
+			r.Get("/", galleriesC.Index)
+			r.Get("/new", galleriesC.New)
+			r.Post("/", galleriesC.Create)
+			r.Get("/{id}/edit", galleriesC.Edit)
+			r.Post("/{id}", galleriesC.Update)
+		})
+
+	})
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page Not Found", http.StatusNotFound)
