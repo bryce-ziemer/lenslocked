@@ -108,7 +108,7 @@ func (g Galleries) Edit(w http.ResponseWriter, r *http.Request) {
 
 // this method shows the view that allows editing of a gallery
 func (g Galleries) Update(w http.ResponseWriter, r *http.Request) {
-	gallery, err := g.galleryByID(w, r, userMustOwnGallery()) // does error handling
+	gallery, err := g.galleryByID(w, r, userMustOwnGallery) // does error handling
 	if err != nil {
 		return
 	}
@@ -168,9 +168,25 @@ func (g Galleries) Index(w http.ResponseWriter, r *http.Request) {
 	g.Templates.Index.Execute(w, r, data)
 }
 
+func (g Galleries) Delete(w http.ResponseWriter, r *http.Request) {
+	//panic("in controller Del")
+	gallery, err := g.galleryByID(w, r, userMustOwnGallery) // does error handling
+	if err != nil {
+		return
+	}
+
+	err = g.GalleryService.Delete(gallery.ID)
+	if err != nil {
+		http.Error(w, "Somethign went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/galleries", http.StatusFound)
+}
+
 type galleryOpt func(w http.ResponseWriter, r *http.Request, gallery *models.Gallery) error
 
-func (g Galleries) galleryByID(w http.ResponseWriter, r *http.Request, opts ...) (*models.Gallery, error) {
+func (g Galleries) galleryByID(w http.ResponseWriter, r *http.Request, opts ...galleryOpt) (*models.Gallery, error) {
 	// get id of gallery to work with
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
@@ -191,9 +207,8 @@ func (g Galleries) galleryByID(w http.ResponseWriter, r *http.Request, opts ...)
 		return nil, err
 	}
 
-
 	for _, opt := range opts {
-		err = opt(w,r,gallery)
+		err = opt(w, r, gallery)
 		if err != nil {
 			return nil, err
 		}

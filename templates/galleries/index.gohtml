@@ -34,7 +34,7 @@
                                 border border-yellow-600
                                 text-xs text-yellow-600
                                 rounded">Edit</a>
-                        <form action="galleries/{{.ID}}/delete" method="post"
+                        <form action="/galleries/{{.ID}}/delete" method="post"
                             onsubmit="return confirm('Do you really want to delete this gallery?');">
                             {{csrfField}}
                             <button type="submit"
