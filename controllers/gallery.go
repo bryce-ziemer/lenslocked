@@ -5,6 +5,7 @@ import (
 	"bryce-ziemer/github.com/lenslocked/models"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strconv"
 
@@ -13,6 +14,7 @@ import (
 
 type Galleries struct {
 	Templates struct {
+		Show  Template
 		New   Template
 		Edit  Template
 		Index Template
@@ -51,32 +53,43 @@ func (g Galleries) Create(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (g Galleries) Show(w http.ResponseWriter, r *http.Request) {
+	gallery, err := g.galleryByID(w, r) // does error handling
+	if err != nil {
+		return
+	}
+
+	var data struct {
+		ID     int
+		Title  string
+		Images []string
+	}
+
+	data.ID = gallery.ID
+	data.Title = gallery.Title
+	for i := 0; i < 20; i++ {
+		w, h := rand.Intn(500)+200, rand.Intn(500)+200
+		catImageURL := fmt.Sprintf("https://placekitten.com/%d/%d", w, h)
+		data.Images = append(data.Images, catImageURL)
+	}
+	g.Templates.Show.Execute(w, r, data)
+
+}
+
 // this method shows the view that allows editing of a gallery
 func (g Galleries) Edit(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	gallery, err := g.galleryByID(w, r, userMustOwnGallery) // does error handling
 	if err != nil {
-		http.Error(w, "Invalid ID", http.StatusNotFound)
-	}
-
-	// get gallery to edit
-	gallery, err := g.GalleryService.ByID(id)
-
-	if err != nil {
-		if errors.Is(err, models.ErrNotFound) {
-			http.Error(w, "Gallery not found", http.StatusNotFound)
-			return
-		}
-
-		http.Error(w, "something went wrong", http.StatusInternalServerError)
 		return
 	}
 
-	// check that user is allowed to edit. only those allowed can do so
-	user := context.User(r.Context())
-	if gallery.UserID != user.ID {
-		http.Error(w, "You are not authorized to edi thtis gallery", http.StatusForbidden)
-		return
-	}
+	// MOIVED to userMustOwnGallery
+	// // check that user is allowed to edit. only those allowed can do so
+	// user := context.User(r.Context())
+	// if gallery.UserID != user.ID {
+	// 	http.Error(w, "You are not authorized to edi thtis gallery", http.StatusForbidden)
+	// 	return
+	// }
 
 	// show view - view displays the 'editable' gallery
 	// this is what we pass to the view. We do not use gallery, because in the general case there maybe
@@ -95,31 +108,18 @@ func (g Galleries) Edit(w http.ResponseWriter, r *http.Request) {
 
 // this method shows the view that allows editing of a gallery
 func (g Galleries) Update(w http.ResponseWriter, r *http.Request) {
-	// get id of gallery to work with
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	gallery, err := g.galleryByID(w, r, userMustOwnGallery()) // does error handling
 	if err != nil {
-		http.Error(w, "Invalid ID", http.StatusNotFound)
-	}
-
-	// get gallery to edit (make sure it actually exists)
-	gallery, err := g.GalleryService.ByID(id)
-
-	if err != nil {
-		if errors.Is(err, models.ErrNotFound) {
-			http.Error(w, "Gallery not found", http.StatusNotFound)
-			return
-		}
-
-		http.Error(w, "something went wrong", http.StatusInternalServerError)
 		return
 	}
 
+	// MOIVED to userMustOwnGallery
 	// check that user is allowed to edit. only those allowed can do so
-	user := context.User(r.Context())
-	if gallery.UserID != user.ID {
-		http.Error(w, "You are not authorized to edi thtis gallery", http.StatusForbidden)
-		return
-	}
+	// user := context.User(r.Context())
+	// if gallery.UserID != user.ID {
+	// 	http.Error(w, "You are not authorized to edi thtis gallery", http.StatusForbidden)
+	// 	return
+	// }
 
 	// update the gallery
 	gallery.Title = r.FormValue("title")
@@ -166,4 +166,49 @@ func (g Galleries) Index(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	g.Templates.Index.Execute(w, r, data)
+}
+
+type galleryOpt func(w http.ResponseWriter, r *http.Request, gallery *models.Gallery) error
+
+func (g Galleries) galleryByID(w http.ResponseWriter, r *http.Request, opts ...) (*models.Gallery, error) {
+	// get id of gallery to work with
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusNotFound)
+		return nil, err
+	}
+
+	// get gallery to edit
+	gallery, err := g.GalleryService.ByID(id)
+
+	if err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			http.Error(w, "Gallery not found", http.StatusNotFound)
+			return nil, err
+		}
+
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return nil, err
+	}
+
+
+	for _, opt := range opts {
+		err = opt(w,r,gallery)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return gallery, nil
+}
+
+func userMustOwnGallery(w http.ResponseWriter, r *http.Request, gallery *models.Gallery) error {
+	// check that user is allowed to edit. only those allowed can do so
+	user := context.User(r.Context())
+	if gallery.UserID != user.ID {
+		http.Error(w, "You are not authorized to edi thtis gallery", http.StatusForbidden)
+		return fmt.Errorf("user does not have access to this gallery")
+	}
+
+	return nil
+
 }
