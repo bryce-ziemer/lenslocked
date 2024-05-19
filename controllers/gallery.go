@@ -197,6 +197,41 @@ func (g Galleries) Delete(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/galleries", http.StatusFound)
 }
 
+func (g Galleries) Image(w http.ResponseWriter, r *http.Request) {
+	filename := chi.URLParam(r, "filename")
+	galleryID, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusNotFound)
+		return
+	}
+
+	images, err := g.GalleryService.Images(galleryID)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "soemthign went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: the below logic (getting an image by filename and galleryID) should be
+	// moved into the models packages and into the GallerytService
+	var requestedImage models.Image
+	imageFound := false
+	for _, image := range images {
+		if image.Filename == filename {
+			requestedImage = image
+			imageFound = true
+			break
+		}
+	}
+
+	if !imageFound {
+		http.Error(w, "image not found", http.StatusNotFound)
+		return
+	}
+
+	http.ServeFile(w, r, requestedImage.Path)
+}
+
 type galleryOpt func(w http.ResponseWriter, r *http.Request, gallery *models.Gallery) error
 
 func (g Galleries) galleryByID(w http.ResponseWriter, r *http.Request, opts ...galleryOpt) (*models.Gallery, error) {
