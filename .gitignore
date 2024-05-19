@@ -1,2 +1,13 @@
 # Env Variables
 .env
+
+### GO ###
+# Binaries for programs and plugins in
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Images directory during development
+images/
