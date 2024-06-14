@@ -38,9 +38,19 @@ func loadEnvConfig() (config, error) {
 	}
 
 	// TODO: PSQL - read from env variables
-	cfg.PSQL = models.DefaultPostgresConfig()
+	cfg.PSQL = models.PostgressConfig{
+		Host:     os.Getenv("PSQL_HOST"),
+		Port:     os.Getenv("PSQL_PORT"),
+		User:     os.Getenv("PSQL_USER"),
+		Password: os.Getenv("PSQL_PASSWORD"),
+		Database: os.Getenv("PSQL_DATABASE"),
+		SSLModel: os.Getenv("PSQL_SSLMODEL"),
+	}
 
-	//TODO: SMTP:
+	if cfg.PSQL.Host == "" && cfg.PSQL.Port == "" {
+		return cfg, fmt.Errorf("No PSQL config provided")
+	}
+
 	cfg.SMTP.Host = os.Getenv("SMTP_HOST")
 	portStr := os.Getenv("SMTP_PORT")
 	cfg.SMTP.Port, err = strconv.Atoi(portStr)
@@ -51,11 +61,11 @@ func loadEnvConfig() (config, error) {
 	cfg.SMTP.Password = os.Getenv("SMTP_PASSWORD")
 
 	//TODO: CSRF - read from env variables
-	cfg.CSRF.Key = "q8csbqhhteveaq3y1fww0z4201ffqyfa" // Created with https://www.gigacalculator.com/randomizers/random-alphanumeric-generator.php
-	cfg.CSRF.Secure = false
+	cfg.CSRF.Key = os.Getenv("CSRF_KEY")                 //"q8csbqhhteveaq3y1fww0z4201ffqyfa" // Created with https://www.gigacalculator.com/randomizers/random-alphanumeric-generator.php
+	cfg.CSRF.Secure = os.Getenv("CSRF_SECURE") == "true" // Getenv returns a string so check if the returned string is equal to "true". If so, evaluates to the boolean true otherwise false
 
 	// TODO: Server - read the server values from ENV variable
-	cfg.Server.Address = ":3000"
+	cfg.Server.Address = os.Getenv("SERVER_ADDRESS")
 
 	return cfg, nil
 }
@@ -223,6 +233,9 @@ func main() {
 		})
 
 	})
+
+	assetsHandler := http.FileServer(http.Dir("assets"))
+	r.Get("/assets/*", http.StripPrefix("/assets", assetsHandler).ServeHTTP)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page Not Found", http.StatusNotFound)

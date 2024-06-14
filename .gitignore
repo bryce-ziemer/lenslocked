@@ -11,3 +11,6 @@
 
 # Images directory during development
 images/
+
+# Node stuff
+node_modules/
