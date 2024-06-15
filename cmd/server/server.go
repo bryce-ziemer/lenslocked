@@ -70,24 +70,19 @@ func loadEnvConfig() (config, error) {
 	return cfg, nil
 }
 
-func main() {
-	cfg, err := loadEnvConfig()
-	if err != nil {
-		panic(err)
-	}
-
+func run(cfg config) error {
 	// Setup the database
 	db, err := models.Open(cfg.PSQL)
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	defer db.Close()
 
 	err = models.MigrateFS(db, migrations.FS, ".")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// Setup services
@@ -243,11 +238,19 @@ func main() {
 
 	// Start the server
 	fmt.Printf("Starting the server on %s...\n", cfg.Server.Address)
-	err = http.ListenAndServe(cfg.Server.Address, r)
+	return http.ListenAndServe(cfg.Server.Address, r)
+
+}
+
+func main() {
+	cfg, err := loadEnvConfig()
 	if err != nil {
 		panic(err)
 	}
 
-	//pgerrcode.UndefinedColumn
+	err = run(cfg)
+	if err != nil {
+		panic(err)
+	}
 
 }
